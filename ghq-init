@@ -1,0 +1,32 @@
+#! /bin/bash
+
+if [ $# != 1 ]; then
+  echo "you should use 1 argument"
+  exit 1
+fi
+
+REPO=$1
+GITHUB_USER=$(git config github.user)
+GHQ_ROOT=$(ghq root)
+
+if [ -z $GITHUB_USER ] && [ -z $GHQ_ROOT ]; then
+  echo "you should set github.user and ghq.root in your gitconfig"
+  exit 1
+fi
+
+REPO_FULL_PATH=${GHQ_ROOT}/github.com/${GITHUB_USER}/${REPO}
+
+mkdir $REPO_FULL_PATH
+
+README=${REPO_FULL_PATH}/README.md
+touch $README
+echo "# ${REPO}" > $README
+
+cd $REPO_FULL_PATH
+
+curl -X POST -u $GITHUB_USER -H "Accept: application/vnd.github.v3+json" -d "{\"name\" : \"${REPO}\"}" https://api.github.com/user/repos
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin git@github.com:$GITHUB_USER/$REPO.git
+git push -u origin master
